@@ -1,0 +1,16 @@
+lenspack==1.0.0
+astropy==6.1.2
+lenstronomy==1.0.0
+numpy==1.23.5
+matplotlib==3.7.2
+pandas==2.0.3
+Pillow==9.4.0
+pykan==0.0.5
+scikit-image==0.24.0
+scikit-learn==1.5.1
+scipy==1.9.0
+torch==2.0.1
+torchaudio==2.0.2
+torchvision==0.15.2
+tqdm==4.66.5
+sympy==1.11.1

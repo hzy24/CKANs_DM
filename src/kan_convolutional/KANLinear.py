@@ -12,7 +12,7 @@ from sympy import symbols, lambdify
 
 
 
-# 定义 fit_lib 包含多项式和初等函数
+
 fit_lib = {
     # poly
     # 'poly_0': lambda c0 : c0,
@@ -20,7 +20,6 @@ fit_lib = {
     'poly_2': lambda x, c0, c1, c2: c0 + c1*x + c2*x**2,
     'poly_3': lambda x, c0, c1, c2, c3: c0 + c1*x + c2*x**2 + c3*x**3,
     'poly_4': lambda x, c0, c1, c2, c3, c4: c0 + c1*x + c2*x**2 + c3*x**3 + c4*x**4,
-    # 初等函数
     '1/x': lambda x, c0, c1: c0/(x+c1),
     '1/x^2': lambda x, c0, c1: c0/(x+c1)**2,
     # 'sqrt': lambda x, c0, c1: c0*sp.sqrt(x+c1),
@@ -61,8 +60,8 @@ class KANLinear(torch.nn.Module):
         self.out_features = out_features
         self.grid_size = grid_size
         self.spline_order = spline_order
-        self.saved_x = None  # 保存输入x的属性
-        self.saved_yi = None  # 保存输入x的属性
+        self.saved_x = None  
+        self.saved_yi = None  
         self.saved_b_splines = None
 
 
@@ -207,36 +206,30 @@ class KANLinear(torch.nn.Module):
     
     @torch.no_grad()
     def save_yi(self):
-        """
-        计算并保存每个特征 xi 对应的 yi，包含偏置项。
-        """
-        # 从模型中读取线性层的权重和偏置
-        k_spines = self.scaled_spline_weight  # 样条输出的权重
+
+        k_spines = self.scaled_spline_weight  
 
 
-        k_base = self.base_weight  # 基础输出的权重
+        k_base = self.base_weight  
 
+        saved_b_splines = self.saved_b_splines  
 
-        # 保存的 B 样条基函数的输出
-        saved_b_splines = self.saved_b_splines  # 形状为 (batch_size, in_features, grid_size + spline_order)
-
-        # 计算每个特征 xi 的 yi
         yi_list = []
         for i in range(self.in_features):
-            # 提取第 i 个特征的 B 样条基函数
-            b_spline_output = saved_b_splines[:, i, :]  # 取出第 i 个特征的 B 样条输出
-            base_output = self.base_activation(self.saved_x[:, i])  # 第 i 个特征的基函数输出
 
-            # 计算 yi = k_spines_i * self.b_splines(xi) + b_spines_i + k_base_i * self.base_activation(xi) + b_base_i
+            b_spline_output = saved_b_splines[:, i, :]  
+            base_output = self.base_activation(self.saved_x[:, i])  
+
+            # calculate yi = k_spines_i * self.b_splines(xi) + b_spines_i + k_base_i * self.base_activation(xi) + b_base_i
             yi = (
-                torch.sum(k_spines[:, i, :] * b_spline_output, dim=-1)  # B 样条部分的加权求和
-                + k_base[:, i] * base_output  # 基函数部分的加权
+                torch.sum(k_spines[:, i, :] * b_spline_output, dim=-1)  
+                + k_base[:, i] * base_output  
             )
             
             yi_list.append(yi)
 
-        # 保存所有的 yi
-        self.saved_yi = torch.stack(yi_list, dim=1)  # 将所有 yi 堆叠为 (batch_size, in_features) 的张量
+
+        self.saved_yi = torch.stack(yi_list, dim=1)  
         # return self.saved_yi
 
 
@@ -317,39 +310,26 @@ class KANLinear(torch.nn.Module):
 
     @torch.no_grad()
     def fit_function(self, x, y, func,x_sym):
-        """
-        使用给定的符号函数对 x 和 y 进行拟合，返回最佳拟合的符号表达式和 R² 值。
 
-        Args:
-            x: numpy 数组，特征数据
-            y: numpy 数组，输出数据
-            func: 符号函数
 
-        Returns:
-            best_fit_expr: 最佳拟合的符号表达式
-            r2: 拟合的 R² 值
-        """
-        # 定义符号变量
         x_np = np.array(x).flatten()
         y_np = np.array(y).flatten()
 
-        # 获取符号函数的参数数量
+
         num_params = func.__code__.co_argcount - 1
         params = symbols(f'c0:{num_params}')
         expr = func(x_sym, *params)
 
-        # 定义残差函数，用于优化
         def residuals(param_values):
             substituted_expr = expr.subs({p: v for p, v in zip(params, param_values)})
             y_pred = [substituted_expr.subs(x_sym, val) for val in x_np]
             return np.sum((np.array(y_pred, dtype=np.float64) - y_np) ** 2)
 
-        # 使用最小化残差进行拟合
+
         result = minimize(residuals, np.ones(num_params))
         best_params = result.x
         best_fit_expr = expr.subs({p: v for p, v in zip(params, best_params)})
 
-        # 计算 R² 值
         y_pred = [best_fit_expr.subs(x_sym, val) for val in x_np]
         r2 = r2_score(y_np, np.array(y_pred, dtype=np.float64))
 
@@ -358,33 +338,31 @@ class KANLinear(torch.nn.Module):
 
 
     @torch.no_grad()
-    def fit_symbolic_for_each_feature(self):
-        """
-        对每个特征 xi 进行符号拟合，输出最佳符号表达式及对应的 R² 值。
-        """
-        # 确保已保存 xi 和 yi
+    def fit_symbolic_for_each_feature(self,fit_lib=fit_lib):
+
+
         if not hasattr(self, 'saved_x') or not hasattr(self, 'saved_yi'):
             raise ValueError("You need to call the forward method first to save the inputs and outputs.")
 
-        # 初始化总表达式和总 R²
+
         total_expr = 0
         total_r2 = 0
         in_features = self.saved_x.shape[1]
 
-        # 对每个特征进行拟合
+
         for i in range(in_features):
-            # 为每个特征生成 xi 作为符号变量
+            
             x_sym = symbols(f'x{i+1}')
-            x_i = self.saved_x[:, i].cpu().numpy()  # 获取第 i 个特征的 x 数据
-            y_i = self.saved_yi[:, i].cpu().numpy()  # 获取第 i 个特征的 y 数据
+            x_i = self.saved_x[:, i].cpu().numpy()  
+            y_i = self.saved_yi[:, i].cpu().numpy()  
 
             best_r2 = -float('inf')
             best_expr = None
 
-            # 尝试对该特征进行拟合
+            
             for func_name, func in fit_lib.items():
                 try:
-                    # 使用 xi 作为符号变量进行拟合
+                    
                     expr, r2 = self.fit_function(x_i, y_i, func, x_sym)
                     if r2 > best_r2:
                         best_r2 = r2
@@ -393,15 +371,15 @@ class KANLinear(torch.nn.Module):
                     print(f"Error fitting {func_name} for x_{i}: {e}")
                     continue
 
-            # 打印每个特征的最佳拟合结果，符号表达式中包含具体的 x_i
-            print(f"特征 x_{i+1} 的符号表达式: {best_expr}, R² = {best_r2}")
+            
+            print(f" x_{i+1} best_expr: {best_expr}, R² = {best_r2}")
 
-            # 累加拟合表达式和 R²，但检查是否为 None
+            
             if best_expr is not None:
-                total_expr += best_expr  # 累加符号表达式
-            total_r2 += best_r2  # 累加 R² 值
+                total_expr += best_expr  
+            total_r2 += best_r2  
 
-        # 计算平均 R²
+
         avg_r2 = total_r2 / in_features if in_features > 0 else 0
         return total_expr, avg_r2
 
