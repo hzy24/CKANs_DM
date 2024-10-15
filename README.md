@@ -7,7 +7,7 @@ ConvKANs is referenced from [here](https://github.com/AntonioTepsich/Convolution
 
 # Dataset
 
-[Dataset download link](https://github.com/davidharvey1986/darkCNN/issues/1#issuecomment-2188575778)
+Details and how to obtain them, as well as requirements, are detailed in this [article](http://arxiv.org/abs/2405.17566)
 
 # Environment
 
