@@ -103,13 +103,13 @@ class CKANs(nn.Module):
         self.flat = nn.Flatten()
 
 
-        # self.kan1 = KAN(width=[32, 3], grid=5, k=3, device=device,seed=0,base_fun=torch.nn.Tanh()).to(self.device)
-        # self.kan2 = KAN(width=[32, 3], grid=5, k=3, device=device,seed=0,base_fun=torch.nn.Tanh()).to(self.device)
-        # self.kan3 = KAN(width=[32, 3], grid=5, k=3, device=device,seed=0,base_fun=torch.nn.Tanh()).to(self.device)
+        self.kan1 = KAN(width=[32, 3], grid=5, k=3, device=device,seed=0,base_fun=torch.nn.Tanh()).to(self.device)
+        self.kan2 = KAN(width=[32, 3], grid=5, k=3, device=device,seed=0,base_fun=torch.nn.Tanh()).to(self.device)
+        self.kan3 = KAN(width=[32, 3], grid=5, k=3, device=device,seed=0,base_fun=torch.nn.Tanh()).to(self.device)
 
-        self.kan1 = KANLinear(in_features=32,out_features=3,base_activation=torch.nn.Tanh).to(self.device)
-        self.kan2 = KANLinear(in_features=32,out_features=3,base_activation=torch.nn.Tanh).to(self.device)
-        self.kan3 = KANLinear(in_features=32,out_features=3,base_activation=torch.nn.Tanh).to(self.device)
+        # self.kan1 = KANLinear(in_features=32,out_features=3,base_activation=torch.nn.Tanh).to(self.device)
+        # self.kan2 = KANLinear(in_features=32,out_features=3,base_activation=torch.nn.Tanh).to(self.device)
+        # self.kan3 = KANLinear(in_features=32,out_features=3,base_activation=torch.nn.Tanh).to(self.device)
 
 
 
