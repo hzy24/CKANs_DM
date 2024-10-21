@@ -3,7 +3,7 @@
 
 The original implementation of KAN is available [here](https://github.com/KindXiaoming/pykan)
 
-ConvKANs is referenced from [here](https://github.com/AntonioTepsich/Convolutional-KANs), and I have added the functionality for symbolic fitting.
+ConvKANs is referenced from [here](https://github.com/AntonioTepsich/Convolutional-KANs), and we have added the functionality for symbolic fitting.
 
 # Dataset
 
@@ -11,8 +11,7 @@ Details and how to obtain them, as well as requirements, are detailed in this [a
 
 # Environment
 
-I recommend using a conda virtual environment for configuration.
-
+we recommend using a conda virtual environment for configuration.
 
 
 `
